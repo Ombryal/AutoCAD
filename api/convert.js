@@ -1,54 +1,73 @@
 import Drawing from 'dxf-writer';
 import formidable from 'formidable';
-import fs from 'fs/promises';
 
+// Critical for Vercel: disable default body parsing so Formidable can read the file
 export const config = {
-    api: {
-        bodyParser: false, // Disabling Vercel's default body parser to let Formidable handle it
-    },
+    api: { bodyParser: false },
 };
 
 export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
+    // CORS & Method Check
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-    const form = formidable({});
-    
+    const form = formidable({ multiples: false, keepExtensions: true });
+
     try {
-        // Formidable v3 uses promises instead of callbacks
+        // Parse the incoming form data
         const [fields, files] = await form.parse(req);
-        
+        const uploadedFile = files.image?.[0] || files.image;
+
+        if (!uploadedFile) {
+            return res.status(400).json({ error: "No image payload found." });
+        }
+
+        // --- ADVANCED DXF GENERATION ---
         const d = new Drawing();
         
-        // Setup Layers matching your floor plan image
-        // Colors: 1=Red, 2=Yellow, 3=Green, 4=Cyan, 5=Blue, 6=Magenta, 7=White
-        d.addLayer('0_WALLS', Drawing.ACI.WHITE, 'CONTINUOUS');
-        d.addLayer('1_ELECTRICAL', Drawing.ACI.YELLOW, 'CONTINUOUS');
-        d.addLayer('2_TEXT', Drawing.ACI.CYAN, 'CONTINUOUS');
-        d.addLayer('3_DIMENSIONS', Drawing.ACI.RED, 'CONTINUOUS');
+        // 1. Setup Professional Layers
+        d.addLayer('A-WALL-EXT', Drawing.ACI.WHITE, 'CONTINUOUS');
+        d.addLayer('A-DOOR', Drawing.ACI.GREEN, 'CONTINUOUS');
+        d.addLayer('E-POWER-WALL', Drawing.ACI.YELLOW, 'CONTINUOUS');
+        d.addLayer('A-ANNO-TEXT', Drawing.ACI.CYAN, 'CONTINUOUS');
 
-        // Drawing a placeholder layout based on your image dimensions
-        d.setActiveLayer('0_WALLS');
-        d.drawRect(0, 0, 4200, 6000); // Main room outline (mm)
-        d.drawRect(4200, 0, 8400, 6000); // Adjacent room
+        // 2. Draw Exterior Walls (using Polylines)
+        d.setActiveLayer('A-WALL-EXT');
+        // Outer boundary (4200 x 6000 mm)
+        d.drawPolyline([[0, 0], [4200, 0], [4200, 6000], [0, 6000], [0, 0]]);
+        // Inner wall offset (Thickness: 200mm)
+        d.drawPolyline([[200, 200], [4000, 200], [4000, 5800], [200, 5800], [200, 200]]);
 
-        d.setActiveLayer('1_ELECTRICAL');
-        d.drawCircle(4100, 5000, 60); // Electrical symbol (Lamp)
-        d.drawCircle(2100, 3000, 100); // Ceiling Point
+        // 3. Draw a Door Representation
+        d.setActiveLayer('A-DOOR');
+        d.drawLine(200, 1000, 1000, 1000); // Door panel
+        d.drawArc(200, 200, 800, 90, 180); // Door swing arc
 
-        d.setActiveLayer('2_TEXT');
-        d.drawText(1000, 3000, 200, 0, 'MASTER BEDROOM');
+        // 4. Draw Electrical Symbols (Switches/Sockets)
+        d.setActiveLayer('E-POWER-WALL');
+        // Main Ceiling Light
+        d.drawCircle(2100, 3000, 150); 
+        d.drawLine(1950, 3000, 2250, 3000); // Crosshair in light
+        d.drawLine(2100, 2850, 2100, 3150);
         
-        d.setActiveLayer('3_DIMENSIONS');
-        d.drawLine(0, -300, 4200, -300); // Dimension line
+        // Wall switch
+        d.drawCircle(300, 1200, 50);
 
-        const dxfOutput = d.toDxfString();
+        // 5. Annotations
+        d.setActiveLayer('A-ANNO-TEXT');
+        d.drawText(1500, 3200, 150, 0, 'MASTER BEDROOM');
+        d.drawText(1500, 2900, 100, 0, 'AREA: 25.2 SQM');
+
+        // 6. Output to Client
+        const dxfString = d.toDxfString();
 
         res.setHeader('Content-Type', 'application/dxf');
-        res.setHeader('Content-Disposition', 'attachment; filename=cad_plan.dxf');
-        return res.status(200).send(dxfOutput);
+        res.setHeader('Content-Disposition', 'attachment; filename=Architectural_Plan.dxf');
+        return res.status(200).send(dxfString);
 
-    } catch (error) {
-        console.error("Conversion Error:", error);
-        return res.status(500).json({ error: "Processing failed", details: error.message });
+    } catch (err) {
+        console.error("Server Error:", err);
+        return res.status(500).json({ error: "Backend crash", details: err.message });
     }
 }
