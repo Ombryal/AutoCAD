@@ -2,7 +2,7 @@
   "name": "cad-generator",
   "version": "1.0.0",
   "dependencies": {
-    "dxf-writer": "^2.1.0",
+    "dxf-writer": "1.18.4",
     "formidable": "^3.5.1"
   }
 }
