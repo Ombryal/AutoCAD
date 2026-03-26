@@ -1,59 +1,57 @@
 const fileInput = document.getElementById('file-input');
 const dropZone = document.getElementById('drop-zone');
 const convertBtn = document.getElementById('convert-btn');
-const statusContainer = document.getElementById('status-container');
+const statusBox = document.getElementById('status-box');
 const progressBar = document.getElementById('progress-bar');
 const statusText = document.getElementById('status-text');
 
-// Handle UI selection
 dropZone.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
-    if (e.target.files.length > 0) {
+    if (e.target.files[0]) {
         document.getElementById('file-name').innerText = e.target.files[0].name;
     }
 };
 
 convertBtn.onclick = async () => {
     const file = fileInput.files[0];
-    if (!file) return alert("Please upload an image first.");
+    if (!file) return alert("Please select a file first.");
 
-    // UI Feedback
+    statusBox.classList.remove('hidden');
     convertBtn.disabled = true;
-    statusContainer.classList.remove('hidden');
-    
+
     const formData = new FormData();
-    formData.append('planImage', file);
+    formData.append('image', file);
 
     try {
-        updateStatus("Scanning layers...", 30);
+        updateProgress("Extracting Layers...", 30);
         
         const response = await fetch('/api/convert', {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) throw new Error('Conversion failed');
+        if (!response.ok) throw new Error("Processing failed.");
 
-        updateStatus("Finalizing DXF...", 90);
+        updateProgress("Vectorizing Elements...", 75);
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = "converted_plan.dxf";
+        a.download = `Plan_${Date.now()}.dxf`;
         document.body.appendChild(a);
         a.click();
-        
-        updateStatus("Complete!", 100);
+
+        updateProgress("Done!", 100);
     } catch (err) {
-        alert("Error: " + err.message);
+        alert(err.message);
         convertBtn.disabled = false;
     }
 };
 
-function updateStatus(text, progress) {
+function updateProgress(text, pct) {
     statusText.innerText = text;
-    progressBar.style.width = `${progress}%`;
-    document.getElementById('status-percent').innerText = `${progress}%`;
+    progressBar.style.width = `${pct}%`;
+    document.getElementById('status-percent').innerText = `${pct}%`;
 }
