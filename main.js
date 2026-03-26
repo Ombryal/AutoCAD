@@ -1,84 +1,59 @@
 const fileInput = document.getElementById('file-input');
 const convertBtn = document.getElementById('convert-btn');
-const fileNameDisplay = document.getElementById('file-name');
+const ngrokInput = document.getElementById('ngrok-url');
 const terminal = document.getElementById('terminal');
 
-// --- MOBILE DEBUGGER ---
-function logToTerminal(msg, type = 'info') {
+function log(msg, type = 'info') {
     const div = document.createElement('div');
-    const time = new Date().toLocaleTimeString();
-    div.innerText = `[${time}] > ${msg}`;
-    
-    if (type === 'error') div.className = 'text-red-400';
-    if (type === 'success') div.className = 'text-blue-400';
-    if (type === 'warn') div.className = 'text-yellow-400';
-    
+    const colors = { info: 'text-green-400', err: 'text-red-400', warn: 'text-yellow-400', success: 'text-blue-400' };
+    div.className = colors[type];
+    div.innerText = `[${new Date().toLocaleTimeString()}] > ${msg}`;
     terminal.appendChild(div);
-    terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
+    terminal.scrollTop = terminal.scrollHeight;
 }
 
-// Intercept file selection
-fileInput.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (file) {
-        fileNameDisplay.innerText = file.name;
-        logToTerminal(`File selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`);
-        
-        // Vercel Serverless payload limit check
-        if (file.size > 4 * 1024 * 1024) {
-            logToTerminal("WARNING: File exceeds 4MB. Vercel will likely reject this.", "warn");
-        }
-    }
-});
+fileInput.onchange = (e) => {
+    if(e.target.files[0]) log(`File loaded: ${e.target.files[0].name}`, 'success');
+};
 
-// Handle Generation
-convertBtn.addEventListener('click', async () => {
+convertBtn.onclick = async () => {
     const file = fileInput.files[0];
-    if (!file) {
-        logToTerminal("Error: No file selected.", "error");
-        return;
-    }
+    const bridgeUrl = ngrokInput.value.trim();
+
+    if (!file || !bridgeUrl) return log("Error: Missing file or Ngrok URL", "err");
 
     convertBtn.disabled = true;
-    convertBtn.innerText = "Processing...";
-    logToTerminal("Initiating API request to /api/convert...");
+    convertBtn.innerText = "Processing on Laptop...";
+    log(`Connecting to ${bridgeUrl}...`);
 
     const formData = new FormData();
     formData.append('image', file);
 
     try {
-        const response = await fetch('/api/convert', {
+        const response = await fetch(`${bridgeUrl}/convert`, {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) {
-            // Read the error from the backend
-            const errorText = await response.text();
-            throw new Error(`Server returned ${response.status}: ${errorText}`);
-        }
+        if (!response.ok) throw new Error(`Laptop Error: ${response.status}`);
 
-        logToTerminal("Server responded successfully. Downloading blob...", "success");
+        log("Vision processing complete. Receiving DXF...", "success");
         
         const blob = await response.blob();
-        if (blob.size === 0) throw new Error("Received empty file from server.");
-
-        // Trigger download
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.style.display = 'none';
         a.href = url;
         a.download = `Architectural_Plan_${Date.now()}.dxf`;
         document.body.appendChild(a);
         a.click();
         
         window.URL.revokeObjectURL(url);
-        logToTerminal("DXF file downloaded successfully!", "success");
+        log("File saved to device.", "success");
 
     } catch (err) {
-        logToTerminal(`CRITICAL ERROR: ${err.message}`, "error");
+        log(`CRITICAL: ${err.message}`, "err");
     } finally {
         convertBtn.disabled = false;
         convertBtn.innerText = "Generate AutoCAD File";
     }
-});
+};
