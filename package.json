@@ -1,8 +1,9 @@
 {
-  "name": "cad-generator",
-  "version": "1.0.0",
+  "name": "cad-gen-advanced",
+  "version": "2.0.0",
+  "main": "api/convert.js",
   "dependencies": {
     "dxf-writer": "1.18.4",
-    "formidable": "^3.5.1"
+    "formidable": "3.5.1"
   }
 }
