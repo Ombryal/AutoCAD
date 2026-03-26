@@ -3,41 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AutoCAD Generator Pro</title>
+    <title>CADGen Hybrid Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Custom scrollbar for the terminal to keep it slick */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-200 min-h-screen flex flex-col items-center p-4 font-sans">
+<body class="bg-slate-900 text-slate-200 min-h-screen flex flex-col items-center p-4">
 
-    <main class="w-full max-w-lg bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden mt-6">
+    <main class="w-full max-w-lg bg-slate-800 rounded-3xl shadow-2xl border border-slate-700 overflow-hidden mt-6">
         <div class="p-6 border-b border-slate-700">
-            <h1 class="text-xl font-bold text-white flex items-center gap-2">
-                <span class="text-blue-500">📐</span> DWG/DXF Engine
-            </h1>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">📐 CAD Engine Remote</h1>
         </div>
 
-        <div class="p-6 space-y-6">
-            <label id="drop-zone" class="block border-2 border-dashed border-slate-600 rounded-xl p-8 text-center hover:border-blue-500 bg-slate-900/50 transition-colors cursor-pointer">
-                <input type="file" id="file-input" class="hidden" accept="image/jpeg, image/png">
-                <div class="text-3xl mb-2">📁</div>
-                <p id="file-name" class="font-medium text-slate-300">Tap to select image</p>
-                <p class="text-xs text-slate-500 mt-1">Max size: 4MB (Vercel limit)</p>
+        <div class="p-6 space-y-5">
+            <div class="space-y-2">
+                <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Laptop Bridge (Ngrok URL)</label>
+                <input type="text" id="ngrok-url" placeholder="https://your-id.ngrok-free.app" 
+                       class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-blue-400 font-mono text-sm focus:border-blue-500 outline-none">
+            </div>
+
+            <label class="block border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center hover:border-blue-500 bg-slate-900/50 cursor-pointer transition-all">
+                <input type="file" id="file-input" class="hidden" accept="image/*">
+                <div class="text-3xl mb-2">📸</div>
+                <p id="file-name" class="text-sm font-medium">Select Floor Plan</p>
             </label>
 
-            <button id="convert-btn" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-slate-700 text-white font-bold py-4 rounded-xl shadow-lg transition-all active:scale-95">
+            <button id="convert-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl shadow-lg active:scale-95 transition-all">
                 Generate AutoCAD File
             </button>
         </div>
 
         <div class="bg-black p-4 border-t border-slate-700">
-            <h3 class="text-xs font-mono text-slate-500 mb-2 uppercase tracking-widest">Live Console</h3>
-            <div id="terminal" class="h-40 overflow-y-auto font-mono text-xs space-y-1 text-green-400">
-                <div>> System initialized. Ready for upload.</div>
+            <h3 class="text-[10px] text-slate-500 uppercase mb-2">Live Laptop Feedback</h3>
+            <div id="terminal" class="h-32 overflow-y-auto font-mono text-[10px] space-y-1 text-green-400">
+                <div>> Ready. Enter Ngrok URL to connect.</div>
             </div>
         </div>
     </main>
