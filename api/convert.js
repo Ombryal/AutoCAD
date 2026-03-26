@@ -2,45 +2,44 @@ import { Drawing } from 'dxf-writer';
 import formidable from 'formidable';
 import fs from 'fs';
 
-export const config = {
-    api: { bodyParser: false }, // Formidable handles parsing
-};
+export const config = { api: { bodyParser: false } };
 
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).send('Method Not Allowed');
 
     const form = new formidable.IncomingForm();
-
+    
     form.parse(req, async (err, fields, files) => {
-        if (err) return res.status(500).json({ error: "Upload error" });
-
         const d = new Drawing();
         
-        // 1. Create Layers (as seen in your image)
-        d.addLayer('Walls', Drawing.ACI.WHITE, 'CONTINUOUS');
-        d.addLayer('Electrical', Drawing.ACI.YELLOW, 'CONTINUOUS');
-        d.addLayer('Text', Drawing.ACI.CYAN, 'CONTINUOUS');
-        d.addLayer('Dimensions', Drawing.ACI.RED, 'CONTINUOUS');
+        // Setup Layers EXACTLY like your image
+        d.addLayer('0_WALLS', Drawing.ACI.WHITE, 'CONTINUOUS');
+        d.addLayer('1_ELECTRICAL', Drawing.ACI.YELLOW, 'CONTINUOUS');
+        d.addLayer('2_TEXT', Drawing.ACI.CYAN, 'CONTINUOUS');
+        d.addLayer('3_DIMENSIONS', Drawing.ACI.RED, 'CONTINUOUS');
 
-        // Logic Note: 
-        // In a real AI implementation, you would send 'files.planImage' 
-        // to a Vision API (like Google Vision or OpenAI) to get coordinates.
+        // Logic Note: Real Image-to-Vector requires a Vision API call here.
+        // For this version, we generate a structured template based on your provided plan layout.
         
-        // Placeholder: Drawing a box for the 'Master Bedroom' based on image
-        d.setActiveLayer('Walls');
-        d.drawRect(0, 0, 4200, 6000); // Scaled dimensions from your plan
+        d.setActiveLayer('0_WALLS');
+        // Master Bedroom Outline (Scaled to mm)
+        d.drawRect(0, 0, 4200, 6000); 
+        
+        d.setActiveLayer('1_ELECTRICAL');
+        // Drawing Electrical Symbols (Lamps/Switches) as blocks
+        d.drawCircle(4100, 5000, 60); // Wall Lamp
+        d.drawCircle(2100, 3000, 100); // Center Light
 
-        d.setActiveLayer('Text');
-        d.drawText(2100, 3000, 200, 0, 'MASTER BEDROOM');
+        d.setActiveLayer('2_TEXT');
+        d.drawText(2100, 3200, 200, 0, 'MASTER BEDROOM');
+        
+        d.setActiveLayer('3_DIMENSIONS');
+        d.drawLine(0, -200, 4200, -200); // Dimension line
 
-        d.setActiveLayer('Electrical');
-        // Example: Drawing a 'Wall Mounted Lamp' symbol (circle)
-        d.drawCircle(4100, 5000, 50); 
-
-        const dxfString = d.toDxfString();
+        const dxfOutput = d.toDxfString();
 
         res.setHeader('Content-Type', 'application/dxf');
-        res.setHeader('Content-Disposition', 'attachment; filename=plan.dxf');
-        return res.status(200).send(dxfString);
+        res.setHeader('Content-Disposition', 'attachment; filename=output.dxf');
+        return res.status(200).send(dxfOutput);
     });
 }
